@@ -114,7 +114,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       const payment = new Payment(paymentData);
       await payment.save();
 
-      res.redirect(`https://www.mindinfi.in/success.html?transcation_Id=${transcationId}`);
+      return res.redirect(`https://www.mindinfi.in/success.html?transcation_Id=${transcationId}`);
     } else {
       res.status(400).send({
         success: false,
