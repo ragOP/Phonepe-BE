@@ -103,29 +103,32 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       },
     });
 
-    if (response.data?.code === "PAYMENT_SUCCESS") {
-      // Save payment details to the database
-      const paymentData = {
-        transcationId: merchantTransactionId,
-        amount: response.data.data.amount / 100, // Assuming amount is in paise
-        name: req.query.name, // Pass name during validation
-        email: req.query.email,
-        phoneNumber: req.query.phone,
-      };
+    onsole.log(response, "Payment details saved");
 
-      console.log(paymentData, "Payment details saved");
+    // if (response.data?.code === "PAYMENT_SUCCESS") {
+    //   // Save payment details to the database
+    //   const paymentData = {
+    //     transcationId: merchantTransactionId,
+    //     amount: response.data.data.amount / 100, // Assuming amount is in paise
+    //     name: req.query.name, // Pass name during validation
+    //     email: req.query.email,
+    //     phoneNumber: req.query.phone,
+    //   };
 
-      const payment = new Payment(paymentData);
-      await payment.save();
+    //   console.log(paymentData, "Payment details saved");
+
+    //   const payment = new Payment(paymentData);
+    //   await payment.save();
 
       return res.redirect(
         `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
       );
-    } else {
-      return res.redirect(
-        `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
-      );
-    }
+    // } 
+    // else {
+    //   return res.redirect(
+    //     `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
+    //   );
+    // }
   } catch (error) {
     res.status(500).send({
       success: false,
