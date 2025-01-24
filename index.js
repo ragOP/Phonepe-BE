@@ -40,7 +40,7 @@ app.get("/pay", async function (req, res) {
       merchantTransactionId,
       merchantUserId: userId,
       amount: amount * 100,
-      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}`,
+      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`,
       redirectMode: "REDIRECT",
       mobileNumber: phone,
       paymentInstrument: { type: "PAY_PAGE" },
