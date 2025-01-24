@@ -103,7 +103,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       },
     });
 
-    onsole.log(response, "Payment details saved");
+    console.log(response, "Payment details saved");
 
     // if (response.data?.code === "PAYMENT_SUCCESS") {
     //   // Save payment details to the database
