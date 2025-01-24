@@ -89,21 +89,25 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     const { merchantTransactionId } = req.params;
 
     console.log(merchantTransactionId, "Merchant Transaction");
+    
+    return res.redirect(
+      `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
+    );
 
-    const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
-    const stringToSign =
-      `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
-    const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
+    // const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
+    // const stringToSign =
+    //   `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
+    // const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
 
-    const response = await axios.get(statusUrl, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-VERIFY": xVerifyChecksum,
-        accept: "application/json",
-      },
-    });
+    // const response = await axios.get(statusUrl, {
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     "X-VERIFY": xVerifyChecksum,
+    //     accept: "application/json",
+    //   },
+    // });
 
-    console.log(response, "Payment details saved");
+    // console.log(response, "Payment details saved");
 
     // if (response.data?.code === "PAYMENT_SUCCESS") {
     //   // Save payment details to the database
@@ -120,9 +124,6 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     //   const payment = new Payment(paymentData);
     //   await payment.save();
 
-      return res.redirect(
-        `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
-      );
     // } 
     // else {
     //   return res.redirect(
