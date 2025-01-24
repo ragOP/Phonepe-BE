@@ -88,9 +88,17 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
   try {
     const { merchantTransactionId } = req.params;
 
+    // Validate that necessary query parameters exist
+    const { name, email, phone } = req.query;
+    if (!name || !email || !phone) {
+      return res.status(400).send({
+        success: false,
+        message: "Missing required query parameters: name, email, or phone",
+      });
+    }
+
     const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
-    const stringToSign =
-      `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
+    const stringToSign = `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
     const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
 
     const response = await axios.get(statusUrl, {
@@ -101,33 +109,38 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       },
     });
 
-    if (response.data?.code === "PAYMENT_SUCCESS") {
+    if (response.data?.code === "PAYMENT_SUCCESS" && response.data.data) {
       // Save payment details to the database
       const paymentData = {
-        transcationId: merchantTransactionId,
+        transactionId: merchantTransactionId,
         amount: response.data.data.amount / 100, // Assuming amount is in paise
-        name: req.query.name, // Pass name during validation
-        email: req.query.email,
-        phoneNumber: req.query.phone,
+        name: name, // Retrieved from req.query
+        email: email,
+        phoneNumber: phone,
       };
 
       const payment = new Payment(paymentData);
       await payment.save();
 
-      return res.redirect(`https://www.mindinfi.in/success.html?transcation_Id=${transcationId}`);
+      // Redirect to success URL with transaction ID
+      return res.redirect(
+        `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
+      );
     } else {
-      res.status(400).send({
+      return res.status(400).send({
         success: false,
         message: response.data?.message || "Payment failed or pending",
       });
     }
   } catch (error) {
-    res.status(500).send({
+    // Handle errors from Axios and other operations
+    return res.status(500).send({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
 });
+
 
 // Start the server
 const port = 8000;
