@@ -20,6 +20,7 @@ const MONGO_URI = process.env.MONGO_URI;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 
 mongoose
   .connect(MONGO_URI)
@@ -40,7 +41,7 @@ app.get("/pay", async function (req, res) {
       merchantTransactionId,
       merchantUserId: userId,
       amount: amount * 100,
-      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}?amount=${encodeURIComponent(amount)}`,
+      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}?name=${name}&email=${email}&phone=${phone}&amount=${amount}`,
       redirectMode: "REDIRECT",
       mobileNumber: phone,
       paymentInstrument: { type: "PAY_PAGE" },
@@ -92,7 +93,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 
     const paymentData = {
       transcationId: merchantTransactionId,
-      amount: req.body.amount,
+      amount: req.query.amount,
       name: req.query.name,
       email: req.query.email,
       phoneNumber: req.query.phone,
