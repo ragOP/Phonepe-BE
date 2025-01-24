@@ -113,6 +113,8 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
         phoneNumber: req.query.phone,
       };
 
+      console.log(paymentData, "Payment details saved");
+
       const payment = new Payment(paymentData);
       await payment.save();
 
@@ -133,7 +135,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 });
 
 // Start the server
-const port = 8000;
+const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`PhonePe application listening on port ${port}`);
 });
