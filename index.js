@@ -40,7 +40,7 @@ app.get("/pay", async function (req, res) {
       merchantTransactionId,
       merchantUserId: userId,
       amount: amount * 100,
-      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`,
+      redirectUrl: `${APP_BE_URL}/payment/validate/${merchantTransactionId}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}?amount=${encodeURIComponent(amount)}`,
       redirectMode: "REDIRECT",
       mobileNumber: phone,
       paymentInstrument: { type: "PAY_PAGE" },
@@ -89,7 +89,20 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     const { merchantTransactionId } = req.params;
 
     console.log(merchantTransactionId, "Merchant Transaction");
-    
+
+    const paymentData = {
+      transcationId: merchantTransactionId,
+      amount: req.body.amount,
+      name: req.query.name,
+      email: req.query.email,
+      phoneNumber: req.query.phone,
+    };
+
+    console.log(paymentData, "Payment details");
+
+    const payment = new Payment(paymentData);
+    await payment.save();
+
     return res.redirect(
       `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
     );
@@ -111,18 +124,11 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 
     // if (response.data?.code === "PAYMENT_SUCCESS") {
     //   // Save payment details to the database
-    //   const paymentData = {
-    //     transcationId: merchantTransactionId,
-    //     amount: response.data.data.amount / 100, // Assuming amount is in paise
-    //     name: req.query.name, // Pass name during validation
-    //     email: req.query.email,
-    //     phoneNumber: req.query.phone,
-    //   };
+
 
     //   console.log(paymentData, "Payment details saved");
 
-    //   const payment = new Payment(paymentData);
-    //   await payment.save();
+    
 
     // } 
     // else {
