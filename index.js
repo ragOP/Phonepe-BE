@@ -14,7 +14,7 @@ const MERCHANT_ID = "MINDIONLINE";
 const PHONE_PE_HOST_URL = "https://api.phonepe.com/apis/hermes";
 const SALT_INDEX = 1;
 const SALT_KEY = "027b801e-256e-4468-992c-512e1fabb424";
-const APP_BE_URL = "http://localhost:8000";
+const APP_BE_URL = "https://phonepe-be.onrender.com";
 const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors());
@@ -114,11 +114,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       const payment = new Payment(paymentData);
       await payment.save();
 
-      res.send({
-        success: true,
-        message: "Payment successful and saved to database",
-        data: response.data,
-      });
+      res.redirect(`https://www.mindinfi.in/success.html?transcation_Id=${transcationId}`);
     } else {
       res.status(400).send({
         success: false,
