@@ -6,7 +6,7 @@ const sha256 = require("sha256");
 const uniqid = require("uniqid");
 const mongoose = require("mongoose");
 const Payment = require("./payment.model");
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 
@@ -88,6 +88,8 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
   try {
     const { merchantTransactionId } = req.params;
 
+    console.log(merchantTransactionId, "Merchant Transaction");
+
     const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
     const stringToSign =
       `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
@@ -114,12 +116,13 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       const payment = new Payment(paymentData);
       await payment.save();
 
-      return res.redirect(`https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`);
+      return res.redirect(
+        `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
+      );
     } else {
-      res.status(400).send({
-        success: false,
-        message: response.data?.message || "Payment failed or pending",
-      });
+      return res.redirect(
+        `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
+      );
     }
   } catch (error) {
     res.status(500).send({
