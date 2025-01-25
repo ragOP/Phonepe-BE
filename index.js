@@ -116,7 +116,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     });
   }
 });
-app.get('/api/user/click', async (req, res) => {
+app.post('/api/user/click', async (req, res) => {
   try {
     const { buttonId } = req.body;
     const response = await buttonClick.findOne({buttonId});
@@ -140,7 +140,7 @@ app.get('/api/user/click', async (req, res) => {
   }
 })
 
-app.get('/api/user/website/visit', async (req, res) => {
+app.post('/api/user/website/visit', async (req, res) => {
   try {
     const { websiteId } = req.body;
     const response = await websiteVisit.findOne({websiteId});
