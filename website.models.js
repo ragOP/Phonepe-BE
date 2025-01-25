@@ -3,6 +3,7 @@ const websiteVisitSchema = new mongoose.Schema({
     websiteId: {
         type: Number,
         required: true,
+        unique: true
     },
     visited: {
         type: Number,

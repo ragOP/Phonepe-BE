@@ -3,6 +3,7 @@ const buttonClickSchema = new mongoose.Schema({
     buttonId: {
         type: Number,
         required: true,
+        unique: true
     },
     clicked: {
         type: Number,
