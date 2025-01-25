@@ -6,6 +6,8 @@ const sha256 = require("sha256");
 const uniqid = require("uniqid");
 const mongoose = require("mongoose");
 const Payment = require("./payment.model");
+const buttonClick = require("./button.models");
+const websiteVisit = require("./website.models");
 require("dotenv").config();
 
 const app = express();
@@ -107,36 +109,6 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     return res.redirect(
       `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
     );
-
-    // const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
-    // const stringToSign =
-    //   `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
-    // const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
-
-    // const response = await axios.get(statusUrl, {
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     "X-VERIFY": xVerifyChecksum,
-    //     accept: "application/json",
-    //   },
-    // });
-
-    // console.log(response, "Payment details saved");
-
-    // if (response.data?.code === "PAYMENT_SUCCESS") {
-    //   // Save payment details to the database
-
-
-    //   console.log(paymentData, "Payment details saved");
-
-    
-
-    // } 
-    // else {
-    //   return res.redirect(
-    //     `https://www.mindinfi.in/success.html?transaction_Id=${merchantTransactionId}`
-    //   );
-    // }
   } catch (error) {
     res.status(500).send({
       success: false,
@@ -144,8 +116,54 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     });
   }
 });
+app.get('/api/user/click', async (req, res) => {
+  try {
+    const { buttonId } = req.body;
+    const response = await buttonClick.findOne({buttonId});
+    if(response){
+      await buttonClick.updateOne({buttonId}, {$inc: {clicked: 1}})
+    }else{
+      await buttonClick.create({
+        buttonId,
+        clicked: 1,
+      })
+    }
+    res.status(200).send({
+      success: true,
+      message: "Button clicked successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+})
 
-// Start the server
+app.get('/api/user/website/visit', async (req, res) => {
+  try {
+    const { websiteId } = req.body;
+    const response = await websiteVisit.findOne({websiteId});
+    if(response){
+      await websiteVisit.updateOne({websiteId}, {$inc: {visited: 1}})
+    }else{
+      await websiteVisit.create({
+        websiteId,
+        visited: 1,
+      })
+    }
+    res.status(200).send({
+      success: true,
+      message: "Website visited successfully",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+})
+
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`PhonePe application listening on port ${port}`);
