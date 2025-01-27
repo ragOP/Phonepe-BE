@@ -179,6 +179,36 @@ app.get('/api/admin/get-all-payments', async (req, res) => {
   }
 })
 
+app.get('/api/admin/get-all-website-views', async (req, res) => {
+  try {
+    const payments = await websiteVisit.find({});
+    res.status(200).send({
+      success: true,
+      data: payments,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+})
+
+app.get('/api/admin/get-all-button-views', async (req, res) => {
+  try {
+    const payments = await buttonClick.find({});
+    res.status(200).send({
+      success: true,
+      data: payments,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+})
+
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`PhonePe application listening on port ${port}`);
