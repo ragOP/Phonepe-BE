@@ -90,56 +90,32 @@ app.get("/pay", async function (req, res) {
 app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
   try {
     const { merchantTransactionId } = req.params;
-    const statusUrl = `${PHONE_PE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
-    const stringToSign = `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
-    const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
 
-    const response = await axios.get(statusUrl, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-VERIFY": xVerifyChecksum,
-        accept: "application/json",
-      },
-    });
-    if (response.data?.code === "PAYMENT_SUCCESS") {
-      const existingTransaction = await Payment.findOne({ transactionId: merchantTransactionId });
+    console.log(merchantTransactionId, "Merchant Transaction");
 
-      if (existingTransaction) {
-        return res.redirect(
-          `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
-        );
-      }
-      const paymentData = {
-        transactionId: merchantTransactionId,
-        amount: req.query.amount,
-        name: req.query.name,
-        email: req.query.email,
-        phoneNumber: req.query.phone,
-      };
+    const paymentData = {
+      transcationId: merchantTransactionId,
+      amount: req.query.amount,
+      name: req.query.name,
+      email: req.query.email,
+      phoneNumber: req.query.phone,
+    };
 
-      const payment = new Payment(paymentData);
-      await payment.save();
+    console.log(paymentData, "Payment details");
 
-      return res.redirect(
-        `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
-      );
-    } else {
-      return res.status(400).send({
-        success: false,
-        message: response.data?.message || "Payment failed or is pending.",
-      });
-    }
+    const payment = new Payment(paymentData);
+    await payment.save();
+
+    return res.redirect(
+      `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
+    );
   } catch (error) {
-    console.error("Error occurred while validating payment:", error.message);
-
-    // Handle unexpected errors
-    return res.status(500).send({
+    res.status(500).send({
       success: false,
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
 });
-
 app.post('/api/user/click', async (req, res) => {
   try {
     const { buttonId } = req.body;
