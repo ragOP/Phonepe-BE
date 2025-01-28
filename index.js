@@ -91,8 +91,6 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
   try {
     const { merchantTransactionId } = req.params;
 
-    console.log(merchantTransactionId, "Merchant Transaction");
-
     const paymentData = {
       transcationId: merchantTransactionId,
       amount: req.query.amount,
@@ -101,7 +99,13 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
       phoneNumber: req.query.phone,
     };
 
-    console.log(paymentData, "Payment details");
+    const response = await Payment.findOne({transcationId: merchantTransactionId})
+
+    if(!response) {
+      return res.redirect(
+        `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
+      );
+    }
 
     const payment = new Payment(paymentData);
     await payment.save();
