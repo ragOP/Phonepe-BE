@@ -101,7 +101,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 
     const response = await Payment.findOne({transcationId: merchantTransactionId})
 
-    if(!response) {
+    if(response) {
       return res.redirect(
         `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
       );
