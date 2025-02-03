@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const axios = require("axios");
 const sha256 = require("sha256");
+const Razorpay = require('razorpay');
 const uniqid = require("uniqid");
 const mongoose = require("mongoose");
 const Payment = require("./payment.model");
