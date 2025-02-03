@@ -34,10 +34,76 @@ app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
 });
 
+
+
+
+const fetch = require('node-fetch');  // Import fetch for making requests
+
+app.post("/conversion", async (req, res) => {
+  try {
+    const { websiteId } = req.body;
+
+    // First, log the website visit
+    const response = await websiteVisit.findOne({ websiteId });
+    if (response) {
+      await websiteVisit.updateOne({ websiteId }, { $inc: { visited: 1 } });
+    } else {
+      await websiteVisit.create({
+        websiteId,
+        visited: 1,
+      });
+    }
+
+    // After logging the visit, send data to Meta Conversion API
+    const eventData = {
+      event_name: 'PageView', // You can change this based on the event you are tracking
+      event_time: Math.floor(Date.now() / 1000)
+     
+    };
+
+    // Send the event to Meta Conversion API
+    const metaResponse = await fetch('https://graph.facebook.com/v12.0/1250755309554196/events', {
+      method: 'POST',
+      headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer EAAM5bcGZB3OUBO2WXFsW4xeNgsUgrMPrSs3MUGufChTTbgpnBFrqtZBZCkQzHZAeC2nGP21aLMtxFFX2CAOsQNkkrfH2T4QBiIyD9fqZBnAqfsZBZBYfV6dZANXnSdm77tokpWjBhPXWciMz8ZB5H75ZA4p31hL7n0pyKtsxyQ6VRsZBvja6ZBqhUE3zJuFx5TMBEEQqNgZDZD'  // Use a valid access token
+      },
+      body: JSON.stringify({
+      data: [eventData]
+      })
+    });
+
+    const result = await metaResponse.json();
+
+    if (metaResponse.ok) {
+      // If the request to Conversion API is successful, return a success response
+      res.status(200).send({
+        success: true,
+        message: "Website visited successfully and event sent to Conversion API",
+        metaResponse: result,  // Optionally return Meta response for debugging
+      });
+    } else {
+      // If the request to Conversion API fails, return an error response
+      res.status(500).send({
+        success: false,
+        message: "Failed to send event to Meta Conversion API",
+        error: result,
+      });
+    }
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+});
+
+
 const razorpay = new Razorpay({
     key_id: 'rzp_live_FcQBR1DILzKVXo',
     key_secret: 'jyZ8k3KCsj4WqW8b0NUrtQxj',  // Razorpay Key Secret (Backend only)
 });
+
 
 
 
