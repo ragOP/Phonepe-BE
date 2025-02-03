@@ -33,29 +33,34 @@ app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
 });
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
-const RAZORPAY_SECRET = process.env.RAZORPAY_SECRET;
+const razorpay = new Razorpay({
+    key_id: 'rzp_live_FcQBR1DILzKVXo',
+    key_secret: 'jyZ8k3KCsj4WqW8b0NUrtQxj',  // Razorpay Key Secret (Backend only)
+});
+
+
 
 app.post('/create-order', async (req, res) => {
-    try {
-        const { amount, currency, receipt } = req.body;
+    const { amount, currency, receipt } = req.body;
 
-        const response = await axios.post('https://api.razorpay.com/v1/orders', {
-            amount,
-            currency,
-            receipt,
-            payment_capture: 1
-        }, {
-            auth: {
-                username: RAZORPAY_KEY_ID,
-                password: RAZORPAY_SECRET
-            }
+    try {
+        // Create an order with Razorpay on the server-side
+        const order = await razorpay.orders.create({
+            amount: amount * 100, // Convert to paise (Razorpay expects the amount in paise)
+            currency: currency,
+            receipt: receipt,
+            payment_capture: 1  // Auto-capture payment
         });
 
-        res.json(response.data);
+        // Send back the order details to the frontend
+        res.json({
+            id: order.id,
+            amount: order.amount,
+            currency: order.currency,
+        });
     } catch (error) {
-        console.error("Razorpay Order Error:", error.response?.data || error.message);
-        res.status(500).json({ error: "Failed to create order" });
+        console.error('Error creating Razorpay order:', error);
+        res.status(500).json({ error: 'Order creation failed' });
     }
 });
 app.get("/pay", async function (req, res) {
