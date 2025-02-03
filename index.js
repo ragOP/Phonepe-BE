@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const Payment = require("./payment.model");
 const buttonClick = require("./button.models");
 const websiteVisit = require("./website.models");
+const crypto = require("crypto-js");
 require("dotenv").config();
 
 const app = express();
@@ -30,6 +31,32 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
+});
+
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_SECRET = process.env.RAZORPAY_SECRET;
+
+app.post('/create-order', async (req, res) => {
+    try {
+        const { amount, currency, receipt } = req.body;
+
+        const response = await axios.post('https://api.razorpay.com/v1/orders', {
+            amount,
+            currency,
+            receipt,
+            payment_capture: 1
+        }, {
+            auth: {
+                username: RAZORPAY_KEY_ID,
+                password: RAZORPAY_SECRET
+            }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        console.error("Razorpay Order Error:", error.response?.data || error.message);
+        res.status(500).json({ error: "Failed to create order" });
+    }
 });
 app.get("/pay", async function (req, res) {
   try {
@@ -88,45 +115,78 @@ app.get("/pay", async function (req, res) {
 });
 
 app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
+  const { merchantTransactionId } = req.params;
+  
+  const URL = `https://apps-uat.phonepe.com/v3/transaction/${MERCHANT_ID}/${merchantTransactionId}/status`;
+  
+  const stringToSign = `/v3/transaction/${MERCHANT_ID}/${merchantTransactionId}/status${SALT_KEY}`;
+  const xVerifyChecksum = sha256(stringToSign) + '###' + SALT_INDEX;
+
+  const options = {
+    method: "GET",
+    url: URL,
+    headers: {
+      accept: "application/json",
+      "Content-Type": "application/json",
+      "X-VERIFY": xVerifyChecksum,
+      "X-MERCHANT-ID": MERCHANT_ID,
+    },
+  };
+
+  // console.log("Generated URL:", URL);
+  // console.log("String to Sign:", stringToSign);
+  // console.log("X-Verify Checksum:", xVerifyChecksum);
+
   try {
-    const { merchantTransactionId } = req.params;
+    const response = await axios.request(options);
+    console.log("API Response:", response.data);
 
-    console.log(merchantTransactionId, "Merchant Transaction");
+    if (response.data && response.data.data && response.data.data.responseCode === "SUCCESS") {
+      const paymentData = {
+        transactionId: merchantTransactionId,
+        amount: req.query.amount || 0,
+        name: req.query.name || "Unknown",
+        email: req.query.email || "No Email",
+        phoneNumber: req.query.phone || "No Phone",
+      };
 
-    const paymentData = {
-      transcationId: merchantTransactionId,
-      amount: req.query.amount,
-      name: req.query.name,
-      email: req.query.email,
-      phoneNumber: req.query.phone,
-    };
+      console.log("Payment Details:", paymentData);
 
-    console.log(paymentData, "Payment details");
+      const payment = new Payment(paymentData);
+      await payment.save();
 
-    const payment = new Payment(paymentData);
-    await payment.save();
-
-    return res.redirect(
-      `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
-    );
+      return res.redirect(
+        `https://www.mindinfi.in/thankyou.html?transaction_Id=${merchantTransactionId}`
+      );
+    } else {
+      console.error("Payment failed:", response.data?.data);
+      return res.status(400).send({
+        success: false,
+        message: "Payment failed",
+      });
+    }
   } catch (error) {
-    res.status(500).send({
+    console.error("Error:", error.response?.data || error.message);
+    const errorMessage = error.response?.data?.message || error.message || "Internal Server Error";
+
+    return res.status(500).send({
       success: false,
-      message: error.response?.data?.message || "Internal Server Error",
+      message: errorMessage,
     });
   }
 });
-app.post('/api/user/click', async (req, res) => {
+
+app.post("/api/user/click", async (req, res) => {
   try {
     const { buttonId } = req.body;
-    const response = await buttonClick.findOne({buttonId});
-    if(response){
-      await buttonClick.updateOne({buttonId}, {$inc: {clicked: 1}})
-    }else{
+    const response = await buttonClick.findOne({ buttonId });
+    if (response) {
+      await buttonClick.updateOne({ buttonId }, { $inc: { clicked: 1 } });
+    } else {
       await buttonClick.create({
         buttonId,
         clicked: 1,
-      })
+      });
     }
     res.status(200).send({
       success: true,
@@ -138,19 +198,19 @@ app.post('/api/user/click', async (req, res) => {
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
-})
+});
 
-app.post('/api/user/website/visit', async (req, res) => {
+app.post("/api/user/website/visit", async (req, res) => {
   try {
     const { websiteId } = req.body;
-    const response = await websiteVisit.findOne({websiteId});
-    if(response){
-      await websiteVisit.updateOne({websiteId}, {$inc: {visited: 1}})
-    }else{
+    const response = await websiteVisit.findOne({ websiteId });
+    if (response) {
+      await websiteVisit.updateOne({ websiteId }, { $inc: { visited: 1 } });
+    } else {
       await websiteVisit.create({
         websiteId,
         visited: 1,
-      })
+      });
     }
     res.status(200).send({
       success: true,
@@ -162,9 +222,9 @@ app.post('/api/user/website/visit', async (req, res) => {
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
-})
+});
 
-app.get('/api/admin/get-all-payments', async (req, res) => {
+app.get("/api/admin/get-all-payments", async (req, res) => {
   try {
     const payments = await Payment.find({});
     res.status(200).send({
@@ -177,9 +237,9 @@ app.get('/api/admin/get-all-payments', async (req, res) => {
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
-})
+});
 
-app.get('/api/admin/get-all-website-views', async (req, res) => {
+app.get("/api/admin/get-all-website-views", async (req, res) => {
   try {
     const payments = await websiteVisit.find({});
     res.status(200).send({
@@ -192,9 +252,9 @@ app.get('/api/admin/get-all-website-views', async (req, res) => {
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
-})
+});
 
-app.get('/api/admin/get-all-button-views', async (req, res) => {
+app.get("/api/admin/get-all-button-views", async (req, res) => {
   try {
     const payments = await buttonClick.find({});
     res.status(200).send({
@@ -207,7 +267,7 @@ app.get('/api/admin/get-all-button-views', async (req, res) => {
       message: error.response?.data?.message || "Internal Server Error",
     });
   }
-})
+});
 
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
