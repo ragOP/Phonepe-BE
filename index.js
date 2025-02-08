@@ -253,24 +253,44 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 
 app.post("/api/user/click", async (req, res) => {
   try {
-    const { buttonId } = req.body;
-    const response = await buttonClick.findOne({ buttonId });
-    if (response) {
-      await buttonClick.updateOne({ buttonId }, { $inc: { clicked: 1 } });
-    } else {
-      await buttonClick.create({
-        buttonId,
-        clicked: 1,
+    const { websiteId, buttonId } = req.body;
+
+    if (!websiteId || !buttonId) {
+      return res.status(400).send({
+        success: false,
+        message: "websiteId and buttonId are required",
       });
     }
+
+    if (![1, 2, 3, 4, 5].includes(buttonId)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid buttonId. It must be between 1 and 5.",
+      });
+    }
+    const websiteButtons = await buttonClick.findOne({ websiteId });
+
+    if (!websiteButtons) {
+      return res.status(404).send({
+        success: false,
+        message: "Website not found",
+      });
+    }
+    const updatedResponse = await buttonClick.findOneAndUpdate(
+      { websiteId, "buttons.buttonId": buttonId },
+      { $inc: { "buttons.$.clicked": 1 } },
+      { new: true }
+    );
+
     res.status(200).send({
       success: true,
-      message: "Button clicked successfully",
+      message: `Button ${buttonId} clicked successfully`,
+      data: updatedResponse,
     });
   } catch (error) {
     res.status(500).send({
       success: false,
-      message: error.response?.data?.message || "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 });
@@ -362,15 +382,45 @@ app.get("/api/admin/get-all-payments", async (req, res) => {
 
 app.get("/api/admin/get-all-website-views", async (req, res) => {
   try {
-    const payments = await websiteVisit.find({});
+    const websiteVisits = await websiteVisit.find({});
+
+    const websiteStats = await Promise.all(
+      websiteVisits.map(async (visit) => {
+        const buttonData = await buttonClick.findOne({ websiteId: visit.websiteId });
+
+        const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+        if (buttonData?.buttons) {
+          buttonData.buttons.forEach((btn) => {
+            if ([1, 2, 3, 4, 5].includes(btn.buttonId)) {
+              buttonClicks[btn.buttonId] = btn.clicked;
+            }
+          });
+        }
+
+        const totalVisits = visit.visited;
+        const fifthButtonClicks = buttonClicks[5];
+
+        const conversionPercentage =
+          fifthButtonClicks > 0 ? ((totalVisits / fifthButtonClicks) * 100).toFixed(2) : 0;
+
+        return {
+          websiteId: visit.websiteId,
+          totalVisits,
+          conversionPercentage: `${conversionPercentage}%`
+        };
+      })
+    );
+
     res.status(200).send({
       success: true,
-      data: payments,
+      data: websiteStats,
     });
+
   } catch (error) {
     res.status(500).send({
       success: false,
-      message: error.response?.data?.message || "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 });
