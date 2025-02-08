@@ -285,7 +285,6 @@ app.post("/api/user/click", async (req, res) => {
     const buttonIndex = websiteButtons.buttons.findIndex(
       (btn) => btn.buttonId === buttonId
     );
-
     if (buttonIndex === -1) {
       await buttonClick.updateOne(
         { websiteId },
@@ -422,7 +421,7 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
     const websiteStats = await Promise.all(
       websiteVisits.map(async (visit) => {
         const buttonData = await buttonClick.findOne({
-          websiteId: new mongoose.Types.ObjectId(visit.websiteId),
+          websiteId: visit.websiteId,
         });
 
         const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
