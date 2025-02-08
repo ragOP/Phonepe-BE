@@ -253,7 +253,7 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 
 app.post("/api/user/click", async (req, res) => {
   try {
-    const { websiteId, buttonId } = req.body;
+    let { websiteId, buttonId } = req.body;
 
     if (!websiteId || !buttonId) {
       return res.status(400).send({
@@ -268,7 +268,10 @@ app.post("/api/user/click", async (req, res) => {
         message: "Invalid buttonId. It must be between 1 and 5.",
       });
     }
+console.log("website id>>>", websiteId)
+    websiteId = new mongoose.Types.ObjectId(websiteId);
     const websiteButtons = await buttonClick.findOne({ websiteId });
+    console.log("websiteButtons >>>", websiteButtons)
 
     if (!websiteButtons) {
       return res.status(404).send({
@@ -291,6 +294,21 @@ app.post("/api/user/click", async (req, res) => {
     res.status(500).send({
       success: false,
       message: error.message || "Internal Server Error",
+    });
+  }
+});
+
+app.get("/api/test", async (req, res) => {
+  try {
+    const websites = await buttonClick.find({});
+    res.status(200).send({
+      success: true,
+      data: websites,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
     });
   }
 });
@@ -386,7 +404,9 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
 
     const websiteStats = await Promise.all(
       websiteVisits.map(async (visit) => {
-        const buttonData = await buttonClick.findOne({ websiteId: visit.websiteId });
+        const buttonData = await buttonClick.findOne({
+          websiteId: new mongoose.Types.ObjectId(visit.websiteId),
+        });
 
         const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
@@ -402,12 +422,16 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
         const fifthButtonClicks = buttonClicks[5];
 
         const conversionPercentage =
-          fifthButtonClicks > 0 ? ((totalVisits / fifthButtonClicks) * 100).toFixed(2) : 0;
+          fifthButtonClicks > 0
+            ? ((totalVisits / fifthButtonClicks) * 100).toFixed(2)
+            : 0;
 
         return {
           websiteId: visit.websiteId,
           totalVisits,
-          conversionPercentage: `${conversionPercentage}%`
+          conversionPercentage: `${conversionPercentage}%`,
+          buttonClicks,
+          websiteName: visit.websiteName,
         };
       })
     );
@@ -416,7 +440,6 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
       success: true,
       data: websiteStats,
     });
-
   } catch (error) {
     res.status(500).send({
       success: false,
