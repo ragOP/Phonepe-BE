@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const buttonClickSchema = new mongoose.Schema(
   {
     websiteId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "websiteVisit",
+      type: String,
       required: true,
+      unique: true,
     },
     buttons: [
       {

@@ -268,16 +268,14 @@ app.post("/api/user/click", async (req, res) => {
         message: "Invalid buttonId. It must be between 1 and 5.",
       });
     }
-console.log("website id>>>", websiteId)
-    websiteId = new mongoose.Types.ObjectId(websiteId);
+
     const websiteButtons = await buttonClick.findOne({ websiteId });
-    console.log("websiteButtons >>>", websiteButtons)
 
     if (!websiteButtons) {
-      return res.status(404).send({
-        success: false,
-        message: "Website not found",
-      });
+      await buttonClick.create({
+        websiteId,
+        buttons: [{ buttonId, clicked: 1 }],
+      })
     }
     const updatedResponse = await buttonClick.findOneAndUpdate(
       { websiteId, "buttons.buttonId": buttonId },
