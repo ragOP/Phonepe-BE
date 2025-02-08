@@ -24,8 +24,6 @@ const buttonClickSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-buttonClickSchema.index({ websiteId: 1 }, { unique: true });
-
 const ButtonClick = mongoose.model("ButtonClick", buttonClickSchema);
 
 module.exports = ButtonClick;
