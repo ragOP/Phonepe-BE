@@ -275,6 +275,7 @@ app.post("/api/user/click", async (req, res) => {
 app.post("/api/user/website/visit", async (req, res) => {
   try {
     const { websiteId } = req.body;
+    const { websiteName } = req.body;
     const response = await websiteVisit.findOne({ websiteId });
     if (response) {
       await websiteVisit.updateOne({ websiteId }, { $inc: { visited: 1 } });
