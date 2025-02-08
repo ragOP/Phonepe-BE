@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const axios = require("axios");
 const sha256 = require("sha256");
-const Razorpay = require('razorpay');
+const Razorpay = require("razorpay");
 const uniqid = require("uniqid");
 const mongoose = require("mongoose");
 const Payment = require("./payment.model");
@@ -11,6 +11,7 @@ const buttonClick = require("./button.models");
 const websiteVisit = require("./website.models");
 const crypto = require("crypto-js");
 require("dotenv").config();
+const requestIp = require("request-ip");
 
 const app = express();
 
@@ -34,10 +35,7 @@ app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
 });
 
-
-
-
-const fetch = require('node-fetch');  // Import fetch for making requests
+// const fetch = require('node-fetch');  // Import fetch for making requests
 
 app.post("/conversion", async (req, res) => {
   try {
@@ -56,22 +54,25 @@ app.post("/conversion", async (req, res) => {
 
     // After logging the visit, send data to Meta Conversion API
     const eventData = {
-      event_name: 'PageView', // You can change this based on the event you are tracking
-      event_time: Math.floor(Date.now() / 1000)
-     
+      event_name: "PageView", // You can change this based on the event you are tracking
+      event_time: Math.floor(Date.now() / 1000),
     };
 
     // Send the event to Meta Conversion API
-    const metaResponse = await fetch('https://graph.facebook.com/v12.0/1250755309554196/events', {
-      method: 'POST',
-      headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer EAAM5bcGZB3OUBO2WXFsW4xeNgsUgrMPrSs3MUGufChTTbgpnBFrqtZBZCkQzHZAeC2nGP21aLMtxFFX2CAOsQNkkrfH2T4QBiIyD9fqZBnAqfsZBZBYfV6dZANXnSdm77tokpWjBhPXWciMz8ZB5H75ZA4p31hL7n0pyKtsxyQ6VRsZBvja6ZBqhUE3zJuFx5TMBEEQqNgZDZD'  // Use a valid access token
-      },
-      body: JSON.stringify({
-      data: [eventData]
-      })
-    });
+    const metaResponse = await fetch(
+      "https://graph.facebook.com/v12.0/1250755309554196/events",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Bearer EAAM5bcGZB3OUBO2WXFsW4xeNgsUgrMPrSs3MUGufChTTbgpnBFrqtZBZCkQzHZAeC2nGP21aLMtxFFX2CAOsQNkkrfH2T4QBiIyD9fqZBnAqfsZBZBYfV6dZANXnSdm77tokpWjBhPXWciMz8ZB5H75ZA4p31hL7n0pyKtsxyQ6VRsZBvja6ZBqhUE3zJuFx5TMBEEQqNgZDZD", // Use a valid access token
+        },
+        body: JSON.stringify({
+          data: [eventData],
+        }),
+      }
+    );
 
     const result = await metaResponse.json();
 
@@ -79,8 +80,9 @@ app.post("/conversion", async (req, res) => {
       // If the request to Conversion API is successful, return a success response
       res.status(200).send({
         success: true,
-        message: "Website visited successfully and event sent to Conversion API",
-        metaResponse: result,  // Optionally return Meta response for debugging
+        message:
+          "Website visited successfully and event sent to Conversion API",
+        metaResponse: result, // Optionally return Meta response for debugging
       });
     } else {
       // If the request to Conversion API fails, return an error response
@@ -98,37 +100,33 @@ app.post("/conversion", async (req, res) => {
   }
 });
 
-
 const razorpay = new Razorpay({
-    key_id: 'rzp_live_FcQBR1DILzKVXo',
-    key_secret: 'jyZ8k3KCsj4WqW8b0NUrtQxj',  // Razorpay Key Secret (Backend only)
+  key_id: "rzp_live_FcQBR1DILzKVXo",
+  key_secret: "jyZ8k3KCsj4WqW8b0NUrtQxj", // Razorpay Key Secret (Backend only)
 });
 
+app.post("/create-order", async (req, res) => {
+  const { amount, currency, receipt } = req.body;
 
+  try {
+    // Create an order with Razorpay on the server-side
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // Convert to paise (Razorpay expects the amount in paise)
+      currency: currency,
+      receipt: receipt,
+      payment_capture: 1, // Auto-capture payment
+    });
 
-
-app.post('/create-order', async (req, res) => {
-    const { amount, currency, receipt } = req.body;
-
-    try {
-        // Create an order with Razorpay on the server-side
-        const order = await razorpay.orders.create({
-            amount: amount * 100, // Convert to paise (Razorpay expects the amount in paise)
-            currency: currency,
-            receipt: receipt,
-            payment_capture: 1  // Auto-capture payment
-        });
-
-        // Send back the order details to the frontend
-        res.json({
-            id: order.id,
-            amount: order.amount,
-            currency: order.currency,
-        });
-    } catch (error) {
-        console.error('Error creating Razorpay order:', error);
-        res.status(500).json({ error: 'Order creation failed' });
-    }
+    // Send back the order details to the frontend
+    res.json({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+  } catch (error) {
+    console.error("Error creating Razorpay order:", error);
+    res.status(500).json({ error: "Order creation failed" });
+  }
 });
 app.get("/pay", async function (req, res) {
   try {
@@ -188,11 +186,11 @@ app.get("/pay", async function (req, res) {
 
 app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
   const { merchantTransactionId } = req.params;
-  
+
   const URL = `https://apps-uat.phonepe.com/v3/transaction/${MERCHANT_ID}/${merchantTransactionId}/status`;
-  
+
   const stringToSign = `/v3/transaction/${MERCHANT_ID}/${merchantTransactionId}/status${SALT_KEY}`;
-  const xVerifyChecksum = sha256(stringToSign) + '###' + SALT_INDEX;
+  const xVerifyChecksum = sha256(stringToSign) + "###" + SALT_INDEX;
 
   const options = {
     method: "GET",
@@ -213,7 +211,11 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     const response = await axios.request(options);
     console.log("API Response:", response.data);
 
-    if (response.data && response.data.data && response.data.data.responseCode === "SUCCESS") {
+    if (
+      response.data &&
+      response.data.data &&
+      response.data.data.responseCode === "SUCCESS"
+    ) {
       const paymentData = {
         transactionId: merchantTransactionId,
         amount: req.query.amount || 0,
@@ -239,7 +241,8 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
     }
   } catch (error) {
     console.error("Error:", error.response?.data || error.message);
-    const errorMessage = error.response?.data?.message || error.message || "Internal Server Error";
+    const errorMessage =
+      error.response?.data?.message || error.message || "Internal Server Error";
 
     return res.status(500).send({
       success: false,
@@ -272,9 +275,25 @@ app.post("/api/user/click", async (req, res) => {
   }
 });
 
+app.get("/api/get-all-visits", async (req, res) => {
+  try {
+    const visits = await websiteVisit.find({});
+    res.status(200).send({
+      success: true,
+      data: visits,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.response?.data?.message || "Internal Server Error",
+    });
+  }
+});
+
 app.post("/api/user/website/visit", async (req, res) => {
   try {
     const { websiteId, websiteName } = req.body;
+    const clientIp = requestIp.getClientIp(req);
 
     if (!websiteId || !websiteName) {
       return res.status(400).send({
@@ -285,16 +304,32 @@ app.post("/api/user/website/visit", async (req, res) => {
 
     const existingVisit = await websiteVisit.findOne({ websiteId });
 
+    const existingUser = await websiteVisit.findOne({
+      websiteId,
+    });
+
+    if (existingUser) {
+      const existingUserIpAddresses = existingUser.userIpAddress;
+
+      if (existingUserIpAddresses.includes(clientIp)) {
+        return res
+          .status(404)
+          .send({ message: "User visited for this website" });
+      }
+    }
+
     if (existingVisit) {
       await websiteVisit.updateOne(
         { websiteId },
-        { $inc: { visited: 1 }, $set: { websiteName } } // Updates name if changed
+        { $push: { userIpAddress: clientIp } },
+        { $inc: { visited: 1 }, $set: { websiteName } }
       );
     } else {
       await websiteVisit.create({
         websiteId,
         websiteName,
         visited: 1,
+        userIpAddress: [clientIp],
       });
     }
 
@@ -309,7 +344,6 @@ app.post("/api/user/website/visit", async (req, res) => {
     });
   }
 });
-
 
 app.get("/api/admin/get-all-payments", async (req, res) => {
   try {

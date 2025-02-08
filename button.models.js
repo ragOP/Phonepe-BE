@@ -8,7 +8,7 @@ const buttonClickSchema = new mongoose.Schema({
     clicked: {
         type: Number,
         default: 0,
-    }
+    },
 })
 
 const buttonClick = mongoose.model('buttonClick', buttonClickSchema);
