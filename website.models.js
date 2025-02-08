@@ -5,6 +5,11 @@ const websiteVisitSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    websiteName: {
+        type: String,
+        required: true,
+        unique: true
+    },
     visited: {
         type: Number,
         default: 0,

@@ -278,7 +278,7 @@ app.post("/api/user/website/visit", async (req, res) => {
     const { websiteName } = req.body;
     const response = await websiteVisit.findOne({ websiteId });
     if (response) {
-      await websiteVisit.updateOne({ websiteId }, { $inc: { visited: 1 } });
+      await websiteVisit.updateOne({ websiteId ,websiteName}, { $inc: { visited: 1 } });
     } else {
       await websiteVisit.create({
         websiteId,
