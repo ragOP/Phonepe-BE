@@ -316,7 +316,7 @@ app.post("/api/user/click", async (req, res) => {
 
 app.get("/api/test", async (req, res) => {
   try {
-    const websites = await buttonClick.find({});
+    const websites = await websiteVisit.find({});
     res.status(200).send({
       success: true,
       data: websites,
@@ -434,7 +434,9 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
           });
         }
 
-        const totalVisits = visit.visited;
+        const totalVisits = visit.userIpAddress.length;
+
+        console.log(totalVisits, "added");
         const fifthButtonClicks = buttonClicks[5];
 
         const conversionPercentage =
