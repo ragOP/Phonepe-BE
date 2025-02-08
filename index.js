@@ -281,6 +281,11 @@ app.post("/api/user/website/visit", async (req, res) => {
       await websiteVisit.updateOne({ websiteId ,websiteName}, { $inc: { visited: 1 } });
     } else {
       await websiteVisit.create({
+      websiteId,
+      websiteName,
+      visited: 1,
+      });
+      await websiteVisit.create({
         websiteId,
         visited: 1,
       });
