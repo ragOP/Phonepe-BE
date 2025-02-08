@@ -7,7 +7,7 @@ const websiteVisitSchema = new mongoose.Schema({
     },
     websiteName: {
         type: String,
-        required: true,
+        required: false,
         unique: true
     },
     visited: {
