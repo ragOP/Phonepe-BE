@@ -274,22 +274,30 @@ app.post("/api/user/click", async (req, res) => {
 
 app.post("/api/user/website/visit", async (req, res) => {
   try {
-    const { websiteId } = req.body;
-    const { websiteName } = req.body;
-    const response = await websiteVisit.findOne({ websiteId });
-    if (response) {
-      await websiteVisit.updateOne({ websiteId ,websiteName}, { $inc: { visited: 1 } });
+    const { websiteId, websiteName } = req.body;
+
+    if (!websiteId || !websiteName) {
+      return res.status(400).send({
+        success: false,
+        message: "websiteId and websiteName are required",
+      });
+    }
+
+    const existingVisit = await websiteVisit.findOne({ websiteId });
+
+    if (existingVisit) {
+      await websiteVisit.updateOne(
+        { websiteId },
+        { $inc: { visited: 1 }, $set: { websiteName } } // Updates name if changed
+      );
     } else {
       await websiteVisit.create({
-      websiteId,
-      websiteName,
-      visited: 1,
-      });
-      await websiteVisit.create({
         websiteId,
+        websiteName,
         visited: 1,
       });
     }
+
     res.status(200).send({
       success: true,
       message: "Website visited successfully",
@@ -297,10 +305,11 @@ app.post("/api/user/website/visit", async (req, res) => {
   } catch (error) {
     res.status(500).send({
       success: false,
-      message: error.response?.data?.message || "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 });
+
 
 app.get("/api/admin/get-all-payments", async (req, res) => {
   try {
