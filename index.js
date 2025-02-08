@@ -275,18 +275,37 @@ app.post("/api/user/click", async (req, res) => {
       await buttonClick.create({
         websiteId,
         buttons: [{ buttonId, clicked: 1 }],
-      })
+      });
+      return res.status(201).send({
+        success: true,
+        message: `Button ${buttonId} clicked successfully`,
+        data: { websiteId, buttons: [{ buttonId, clicked: 1 }] },
+      });
     }
-    const updatedResponse = await buttonClick.findOneAndUpdate(
-      { websiteId, "buttons.buttonId": buttonId },
-      { $inc: { "buttons.$.clicked": 1 } },
-      { new: true }
+    const buttonIndex = websiteButtons.buttons.findIndex(
+      (btn) => btn.buttonId === buttonId
     );
+
+    if (buttonIndex === -1) {
+      await buttonClick.updateOne(
+        { websiteId },
+        { $push: { buttons: { buttonId, clicked: 1 } } }
+      );
+    } else {
+      await buttonClick.updateOne(
+        { websiteId, "buttons.buttonId": buttonId },
+        { $inc: { "buttons.$.clicked": 1 } }
+      );
+    }
+
+    const finalResponse = await buttonClick.findOne({ websiteId });
+
+    console.log(finalResponse, "<<<<<<<<<<<<----------");
 
     res.status(200).send({
       success: true,
       message: `Button ${buttonId} clicked successfully`,
-      data: updatedResponse,
+      data: finalResponse,
     });
   } catch (error) {
     res.status(500).send({
