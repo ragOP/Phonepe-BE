@@ -29,7 +29,12 @@ app.use(express.urlencoded({ extended: false }));
 
 mongoose
   .connect(MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => {
+  //   console.log(await buttonClick.collection.getIndexes());
+  // await buttonClick.collection.dropIndex("buttonId_1");
+  // console.log("Index dropped successfully!");
+    console.log("MongoDB connected")
+  })
   .catch((err) => console.error("MongoDB connection error:", err));
 app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
@@ -261,6 +266,13 @@ app.post("/api/user/click", async (req, res) => {
         message: "websiteId and buttonId are required",
       });
     }
+    if (!websiteId || buttonId === undefined || buttonId === null) {
+      return res.status(400).send({
+        success: false,
+        message: "websiteId and buttonId are required",
+      });
+    }
+    
 
     if (![1, 2, 3, 4, 5].includes(buttonId)) {
       return res.status(400).send({
@@ -316,7 +328,7 @@ app.post("/api/user/click", async (req, res) => {
 
 app.get("/api/test", async (req, res) => {
   try {
-    const websites = await websiteVisit.find({});
+    const websites = await buttonClick.find({});
     res.status(200).send({
       success: true,
       data: websites,

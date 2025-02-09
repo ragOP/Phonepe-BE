@@ -11,7 +11,7 @@ const buttonClickSchema = new mongoose.Schema(
       {
         buttonId: {
           type: Number,
-          required: true,
+          required: [true, "Button ID is required"],
           enum: [1, 2, 3, 4, 5],
         },
         clicked: {
