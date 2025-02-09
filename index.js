@@ -8,6 +8,7 @@ const uniqid = require("uniqid");
 const mongoose = require("mongoose");
 const Payment = require("./payment.model");
 const buttonClick = require("./button.models");
+const sessionModel = require("./session.model");
 const websiteVisit = require("./website.models");
 const crypto = require("crypto-js");
 require("dotenv").config();
