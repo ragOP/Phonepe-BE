@@ -568,3 +568,27 @@ app.post("/api/user/session/end", async (req, res) => {
     res.status(500).send({ success: false, message: error.message });
   }
 });
+
+app.get("/api/user/analytics/:websiteId", async (req, res) => {
+  try {
+    const { websiteId } = req.params;
+
+    const sessions = await sessionModel.find({ websiteId });
+    const totalSessions = sessions.length;
+    const totalDuration = sessions.reduce((acc, session) => acc + (session.sessionDuration || 0), 0);
+    const bounces = sessions.filter(session => session.interactions === 0).length;
+
+    const averageSessionDuration = totalSessions ? (totalDuration / totalSessions).toFixed(2) : 0;
+    const bounceRate = totalSessions ? ((bounces / totalSessions) * 100).toFixed(2) : 0;
+
+    res.status(200).send({
+      success: true,
+      analytics: {
+        averageSessionDuration: `${averageSessionDuration} seconds`,
+        bounceRate: `${bounceRate}%`
+      }
+    });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
