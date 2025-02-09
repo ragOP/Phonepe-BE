@@ -506,3 +506,65 @@ const port = process.env.PORT || 8000;
 app.listen(port, () => {
   console.log(`PhonePe application listening on port ${port}`);
 });
+
+
+app.post("/api/user/session/start", async (req, res) => {
+  try {
+    const { websiteId, sessionId } = req.body;
+    const clientIp = requestIp.getClientIp(req);
+
+    if (!websiteId || !sessionId) {
+      return res.status(400).send({ success: false, message: "websiteId and sessionId are required" });
+    }
+
+    await sessionModel.create({
+      websiteId,
+      sessionId,
+      startTime: new Date(),
+      clientIp,
+      interactions: 0
+    });
+
+    res.status(200).send({ success: true, message: "Session started" });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/user/session/interaction", async (req, res) => {
+  try {
+    const { websiteId, sessionId } = req.body;
+
+    await sessionModel.updateOne(
+      { websiteId, sessionId },
+      { $inc: { interactions: 1 } }
+    );
+
+    res.status(200).send({ success: true, message: "Interaction recorded" });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+app.post("/api/user/session/end", async (req, res) => {
+  try {
+    const { websiteId, sessionId } = req.body;
+
+    const session = await sessionModel.findOne({ websiteId, sessionId });
+    if (!session) {
+      return res.status(404).send({ success: false, message: "Session not found" });
+    }
+
+    const endTime = new Date();
+    const sessionDuration = (endTime - session.startTime) / 1000; // in seconds
+
+    await sessionModel.updateOne(
+      { websiteId, sessionId },
+      { $set: { endTime, sessionDuration } }
+    );
+
+    res.status(200).send({ success: true, message: "Session ended", duration: sessionDuration });
+  } catch (error) {
+    res.status(500).send({ success: false, message: error.message });
+  }
+});
