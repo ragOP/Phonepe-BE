@@ -460,8 +460,10 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
 
         const conversionPercentage =
           fifthButtonClicks > 0
-            ? ((totalVisits / fifthButtonClicks) * 100).toFixed(2)
+            ? ((fifthButtonClicks / totalVisits) * 100).toFixed(2)
             : 0;
+
+        // console.log(conversionPercentage, "converted");
 
         return {
           websiteId: visit.websiteId,
