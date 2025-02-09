@@ -18,6 +18,10 @@ const buttonClickSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
+        ipAddresses: {
+          type: [String],
+          default: [],
+        }
       },
     ],
   },

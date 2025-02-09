@@ -259,20 +259,14 @@ app.get("/payment/validate/:merchantTransactionId", async function (req, res) {
 app.post("/api/user/click", async (req, res) => {
   try {
     let { websiteId, buttonId } = req.body;
+    const clientIp = requestIp.getClientIp(req);
 
-    if (!websiteId || !buttonId) {
-      return res.status(400).send({
-        success: false,
-        message: "websiteId and buttonId are required",
-      });
-    }
     if (!websiteId || buttonId === undefined || buttonId === null) {
       return res.status(400).send({
         success: false,
         message: "websiteId and buttonId are required",
       });
     }
-    
 
     if (![1, 2, 3, 4, 5].includes(buttonId)) {
       return res.status(400).send({
@@ -281,37 +275,50 @@ app.post("/api/user/click", async (req, res) => {
       });
     }
 
-    const websiteButtons = await buttonClick.findOne({ websiteId });
+    let websiteButtons = await buttonClick.findOne({ websiteId });
 
     if (!websiteButtons) {
       await buttonClick.create({
         websiteId,
-        buttons: [{ buttonId, clicked: 1 }],
+        buttons: [{ buttonId, clicked: 1, ipAddresses: [clientIp] }],
       });
       return res.status(201).send({
         success: true,
         message: `Button ${buttonId} clicked successfully`,
-        data: { websiteId, buttons: [{ buttonId, clicked: 1 }] },
+        data: { websiteId, buttons: [{ buttonId, clicked: 1, ipAddresses: [clientIp] }] },
       });
     }
+
     const buttonIndex = websiteButtons.buttons.findIndex(
       (btn) => btn.buttonId === buttonId
     );
+
     if (buttonIndex === -1) {
       await buttonClick.updateOne(
         { websiteId },
-        { $push: { buttons: { buttonId, clicked: 1 } } }
+        { $push: { buttons: { buttonId, clicked: 1, ipAddresses: [clientIp] } } }
       );
     } else {
+      const existingButton = websiteButtons.buttons[buttonIndex];
+
+      if (existingButton.ipAddresses.includes(clientIp)) {
+        return res.status(400).send({
+          success: false,
+          message: "User has already clicked this button",
+        });
+      }
+
+      // If IP is new, update click count and store IP
       await buttonClick.updateOne(
         { websiteId, "buttons.buttonId": buttonId },
-        { $inc: { "buttons.$.clicked": 1 } }
+        { 
+          $inc: { "buttons.$.clicked": 1 },
+          $push: { "buttons.$.ipAddresses": clientIp }
+        }
       );
     }
 
     const finalResponse = await buttonClick.findOne({ websiteId });
-
-    console.log(finalResponse, "<<<<<<<<<<<<----------");
 
     res.status(200).send({
       success: true,
