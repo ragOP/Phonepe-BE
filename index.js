@@ -13,6 +13,8 @@ const websiteVisit = require("./website.models");
 const crypto = require("crypto-js");
 require("dotenv").config();
 const requestIp = require("request-ip");
+const TestVisitSchema = require("./test.models");
+const TestButtonClick = require("./test.buttton");
 
 const app = express();
 
@@ -591,5 +593,226 @@ app.get("/api/user/analytics/:websiteId", async (req, res) => {
     });
   } catch (error) {
     res.status(500).send({ success: false, message: error.message });
+  }
+});
+
+app.get("/api/admin/get-all-website-views2", async (req, res) => {
+  try {
+    let { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: "startDate and endDate are required",
+      });
+    }
+
+    startDate = new Date(startDate);
+    endDate = new Date(endDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    const websiteVisits = await TestVisitSchema.find({
+      "visits.visitedAt": { $gte: startDate, $lte: endDate },
+    });
+
+    const websiteStats = await Promise.all(
+      websiteVisits.map(async (visit) => {
+        const buttonData = await TestButtonClick.findOne({
+          websiteId: visit.websiteId,
+          "buttons.clickedAt": { $gte: startDate, $lte: endDate },
+        });
+
+        console.log(buttonData, "<<<<< ButtonData")
+
+        const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+        if (buttonData?.buttons) {
+          buttonData.buttons.forEach((btn) => {
+            if ([1, 2, 3, 4, 5].includes(btn.buttonId)) {
+              buttonClicks[btn.buttonId] = btn.clicked;
+            }
+          });
+        }
+
+        const filteredVisits = visit.visits.filter(
+          (v) => v.visitedAt >= startDate && v.visitedAt <= endDate
+        );
+
+        const totalVisits = filteredVisits.length;
+
+        const uniqueVisitors = new Set(filteredVisits.map((v) => v.ipAddress)).size;
+
+        const fifthButtonClicks = buttonClicks[5];
+
+        const conversionPercentage =
+          totalVisits > 0
+            ? ((fifthButtonClicks / totalVisits) * 100).toFixed(2)
+            : "0";
+
+        return {
+          websiteId: visit.websiteId,
+          websiteName: visit.websiteName,
+          uniqueVisitors,
+          totalVisits,
+          conversionPercentage: `${conversionPercentage}`,
+          buttonClicks,
+          dateRange: { startDate, endDate },
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: websiteStats,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
+});
+
+app.post('/api/user/website/visits1', async (req, res) => {
+  try {
+    const { websiteId, websiteName } = req.body;
+    const clientIp = requestIp.getClientIp(req); 
+
+    if (!websiteId || !websiteName) {
+      return res.status(400).json({
+        success: false,
+        message: "websiteId and websiteName are required",
+      });
+    }
+
+    const existingVisit = await TestVisitSchema.findOne({ websiteId });
+
+    if (existingVisit) {
+      const isIpRecorded = existingVisit.ipAddresses.includes(clientIp);
+
+      if (isIpRecorded) {
+        return res.status(400).json({
+          success: false,
+          message: "User already visited this website",
+        });
+      }
+      existingVisit.ipAddresses.push(clientIp);
+      existingVisit.visits.push({ visitedAt: new Date() });
+      await existingVisit.save();
+    } else {
+      await TestVisitSchema.create({
+        websiteId,
+        websiteName,
+        ipAddresses: [clientIp],
+        visits: [{ visitedAt: new Date() }],
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Website visit logged successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
+})
+
+app.post("/api/user/click1", async (req, res) => {
+  try {
+    let { websiteId, buttonId } = req.body;
+    const clientIp = requestIp.getClientIp(req);
+
+    if (!websiteId || buttonId === undefined || buttonId === null) {
+      return res.status(400).send({
+        success: false,
+        message: "websiteId and buttonId are required",
+      });
+    }
+
+    if (![1, 2, 3, 4, 5].includes(buttonId)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid buttonId. It must be between 1 and 5.",
+      });
+    }
+
+    let websiteButtons = await TestButtonClick.findOne({ websiteId });
+
+    if (!websiteButtons) {
+      await TestButtonClick.create({
+        websiteId,
+        buttons: [
+          {
+            buttonId,
+            clicked: 1,
+            ipAddresses: [clientIp],
+            clickedAt: Date.now(),
+          },
+        ],
+      });
+
+      return res.status(201).send({
+        success: true,
+        message: `Button ${buttonId} clicked successfully`,
+        data: {
+          websiteId,
+          buttons: [
+            { buttonId, clicked: 1, ipAddresses: [clientIp], clickedAt: Date.now() },
+          ],
+        },
+      });
+    }
+
+    const buttonIndex = websiteButtons.buttons.findIndex(
+      (btn) => btn.buttonId === buttonId
+    );
+
+    if (buttonIndex === -1) {
+      await TestButtonClick.updateOne(
+        { websiteId },
+        {
+          $push: {
+            buttons: {
+              buttonId,
+              clicked: 1,
+              ipAddresses: [clientIp],
+              clickedAt: Date.now(),
+            },
+          },
+        }
+      );
+    } else {
+      const existingButton = websiteButtons.buttons[buttonIndex];
+
+      if (existingButton.ipAddresses.includes(clientIp)) {
+        return res.status(400).send({
+          success: false,
+          message: "User has already clicked this button",
+        });
+      }
+      await TestButtonClick.updateOne(
+        { websiteId, "buttons.buttonId": buttonId },
+        {
+          $inc: { "buttons.$.clicked": 1 },
+          $push: { "buttons.$.ipAddresses": clientIp },
+          $set: { "buttons.$.clickedAt": Date.now() },
+        }
+      );
+    }
+
+    const finalResponse = await TestButtonClick.findOne({ websiteId });
+
+    res.status(200).send({
+      success: true,
+      message: `Button ${buttonId} clicked successfully`,
+      data: finalResponse,
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
   }
 });
