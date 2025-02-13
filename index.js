@@ -475,6 +475,7 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
           conversionPercentage: `${conversionPercentage}%`,
           buttonClicks,
           websiteName: visit.websiteName,
+          date: new Date().toLocaleDateString(),
         };
       })
     );
