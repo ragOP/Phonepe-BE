@@ -443,6 +443,7 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
         const buttonData = await buttonClick.findOne({
             websiteId: visit.websiteId,
             // date: visit.createdAt.toISOString().split('T')[0], 
+            date: new Date().toLocaleDateString(),
           websiteId: visit.websiteId,
         });
 
