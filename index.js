@@ -441,9 +441,6 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
     const websiteStats = await Promise.all(
       websiteVisits.map(async (visit) => {
         const buttonData = await buttonClick.findOne({
-            websiteId: visit.websiteId,
-            // date: visit.createdAt.toISOString().split('T')[0], 
-            date: new Date().toLocaleDateString(),
           websiteId: visit.websiteId,
         });
 
@@ -475,123 +472,6 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
           conversionPercentage: `${conversionPercentage}%`,
           buttonClicks,
           websiteName: visit.websiteName,
-        };
-      })
-    );
-
-    res.status(200).send({
-      success: true,
-      data: websiteStats,
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message || "Internal Server Error",
-    });
-  }
-});
-
-
-app.get("/api/admin/get-all-website-views1", async (req, res) => {
-  try {
-    const websiteVisits = await websiteVisit.find({});
-
-    const websiteStats = await Promise.all(
-      websiteVisits.map(async (visit) => {
-        const buttonData = await buttonClick.findOne({
-            websiteId: visit.websiteId,
-            // date: visit.createdAt.toISOString().split('T')[0], 
-            date: new Date().toLocaleDateString(),
-          websiteId: visit.websiteId,
-        });
-
-        const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-        if (buttonData?.buttons) {
-          buttonData.buttons.forEach((btn) => {
-            if ([1, 2, 3, 4, 5].includes(btn.buttonId)) {
-              buttonClicks[btn.buttonId] = btn.clicked;
-            }
-          });
-        }
-
-        const totalVisits = visit.userIpAddress.length;
-
-        console.log(totalVisits, "added");
-        const fifthButtonClicks = buttonClicks[5];
-
-        const conversionPercentage =
-          fifthButtonClicks > 0
-            ? ((fifthButtonClicks / totalVisits) * 100).toFixed(2)
-            : 0;
-
-        // console.log(conversionPercentage, "converted");
-
-        return {
-          websiteId: visit.websiteId,
-          totalVisits,
-          conversionPercentage: `${conversionPercentage}%`,
-          buttonClicks,
-          websiteName: visit.websiteName,
-          date: new Date().toLocaleDateString(),
-        };
-      })
-    );
-
-    res.status(200).send({
-      success: true,
-      data: websiteStats,
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: error.message || "Internal Server Error",
-    });
-  }
-});
-
-app.get("/api/admin/get-all-website-views2", async (req, res) => {
-  try {
-    const websiteVisits = await websiteVisit.find({});
-
-    const websiteStats = await Promise.all(
-      websiteVisits.map(async (visit) => {
-        const buttonData = await buttonClick.findOne({
-            websiteId: visit.websiteId,
-            // date: visit.createdAt.toISOString().split('T')[0], 
-            date: new Date().toLocaleDateString(),
-          websiteId: visit.websiteId,
-        });
-
-        const buttonClicks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-        if (buttonData?.buttons) {
-          buttonData.buttons.forEach((btn) => {
-            if ([1, 2, 3, 4, 5].includes(btn.buttonId)) {
-              buttonClicks[btn.buttonId] = btn.clicked;
-            }
-          });
-        }
-
-        const totalVisits = visit.userIpAddress.length;
-
-        console.log(totalVisits, "added");
-        const fifthButtonClicks = buttonClicks[5];
-
-        const conversionPercentage =
-          fifthButtonClicks > 0
-            ? ((fifthButtonClicks / totalVisits) * 100).toFixed(2)
-            : 0;
-
-        // console.log(conversionPercentage, "converted");
-
-        return {
-          websiteId: visit.websiteId,
-          totalVisits,
-          conversionPercentage: `${conversionPercentage}%`,
-          buttonClicks,
-          websiteName: visit.websiteName,
-          date: new Date().toLocaleDateString(),
         };
       })
     );
