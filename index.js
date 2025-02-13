@@ -441,6 +441,8 @@ app.get("/api/admin/get-all-website-views", async (req, res) => {
     const websiteStats = await Promise.all(
       websiteVisits.map(async (visit) => {
         const buttonData = await buttonClick.findOne({
+            websiteId: visit.websiteId,
+            date: visit.createdAt.toISOString().split('T')[0], 
           websiteId: visit.websiteId,
         });
 
