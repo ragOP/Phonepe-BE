@@ -888,6 +888,7 @@ app.get('/api/todo', async (req, res) => {
 
 
 app.post("/api/user/form", async (req, res) => {
+ 
   try {
     const { name, email, mobile, amount, type, state } = req.body;
 
@@ -901,5 +902,29 @@ app.post("/api/user/form", async (req, res) => {
     res.status(201).json({ success: true, message: "Data saved successfully", data: newForm });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || "Internal Server Error" });
+  }
+});
+
+app.get("/api/user/form", async (req, res) => {
+  try {
+    const forms = await FormData.find();
+
+    if (forms.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No forms found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Forms fetched successfully",
+      data: forms,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
   }
 });
