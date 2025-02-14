@@ -16,6 +16,7 @@ require("dotenv").config();
 const requestIp = require("request-ip");
 const TestVisitSchema = require("./test.models");
 const TestButtonClick = require("./test.buttton");
+const FormData = require("./models/FormData");
 
 const app = express();
 
@@ -882,5 +883,23 @@ app.get('/api/todo', async (req, res) => {
       success: false,
       message: 'Internal Server Error',
     });
+  }
+});
+
+
+app.post("/api/user/form", async (req, res) => {
+  try {
+    const { name, email, mobile, amount, type, state } = req.body;
+
+    if (!name || !email || !mobile || !amount || !type || !state) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    const newForm = new FormData({ name, email, mobile, amount, type, state });
+    await newForm.save();
+
+    res.status(201).json({ success: true, message: "Data saved successfully", data: newForm });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Internal Server Error" });
   }
 });
