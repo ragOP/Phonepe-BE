@@ -10,6 +10,7 @@ const Payment = require("./payment.model");
 const buttonClick = require("./button.models");
 const sessionModel = require("./session.model");
 const websiteVisit = require("./website.models");
+const Todo = require('.//Todo'); 
 const crypto = require("crypto-js");
 require("dotenv").config();
 const requestIp = require("request-ip");
@@ -813,6 +814,44 @@ app.post("/api/user/click1", async (req, res) => {
     res.status(500).send({
       success: false,
       message: error.message || "Internal Server Error",
+    });
+  }
+});
+
+
+app.post('/api/todo', async (req, res) => {
+  try {
+    const { todos } = req.body;  // Array of todos received from the frontend
+
+    // Validate that todos is an array
+    if (!Array.isArray(todos)) {
+      return res.status(400).json({
+        success: false,
+        message: 'The provided data must be an array of todos',
+      });
+    }
+
+    // Create todo items and save them into MongoDB
+    const todoItems = todos.map(todo => ({
+      text: todo.text,
+      isCompleted: todo.isCompleted || false, // Default to false if not provided
+    }));
+
+    // Insert the todos into the MongoDB collection
+    await Todo.insertMany(todoItems);
+
+    // Respond with a success message
+    return res.status(200).json({
+      success: true,
+      message: 'Todos saved successfully!',
+      data: todoItems,  // The inserted todos can be returned, or you can return the response from the DB
+    });
+
+  } catch (error) {
+    console.error('Error while processing todo array:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
     });
   }
 });
