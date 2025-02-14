@@ -16,7 +16,7 @@ require("dotenv").config();
 const requestIp = require("request-ip");
 const TestVisitSchema = require("./test.models");
 const TestButtonClick = require("./test.buttton");
-const FormData = require("./models/FormData");
+const FormData = require("./FormData");
 
 const app = express();
 
