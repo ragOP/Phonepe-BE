@@ -855,3 +855,32 @@ app.post('/api/todo', async (req, res) => {
     });
   }
 });
+
+app.get('/api/todo', async (req, res) => {
+  try {
+    // Fetch all the todo items from MongoDB
+    const todos = await Todo.find(); // You can apply filters here if necessary
+
+    // Check if no todos exist in the database
+    if (todos.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No todos found',
+      });
+    }
+
+    // Respond with the fetched todos
+    return res.status(200).json({
+      success: true,
+      message: 'Todos fetched successfully!',
+      data: todos,
+    });
+
+  } catch (error) {
+    console.error('Error while fetching todos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+    });
+  }
+});
