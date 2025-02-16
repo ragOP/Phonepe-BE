@@ -928,3 +928,12 @@ app.get("/api/user/form", async (req, res) => {
     });
   }
 });
+
+app.get('/get-number', async (req, res) => {
+  try {
+    const response = await axios.get('http://api.routingapi.com/api/v1/numbers?&campaign_key=09b6d915600d4764dd5de4d9ead829b5');
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
