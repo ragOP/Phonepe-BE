@@ -12,3 +12,6 @@ const SubmissionSchema = new mongoose.Schema({
     correctCount: Number,
     totalQuestions: Number,
 });
+
+
+module.exports = mongoose.model("Submission", SubmissionSchema);
