@@ -17,7 +17,8 @@ const requestIp = require("request-ip");
 const TestVisitSchema = require("./test.models");
 const TestButtonClick = require("./test.buttton");
 const FormData = require("./FormData");
-const Submission = mongoose.model("Submission", SubmissionSchema);
+// const Submission = mongoose.model("Submission", SubmissionSchema);
+const Submission = require("./SubmissionSchema");
 
 const app = express();
 
