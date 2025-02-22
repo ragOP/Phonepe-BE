@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const SubmissionSchema = new mongoose.Schema({
     studentName: String,
     answers: [
