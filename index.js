@@ -17,6 +17,7 @@ const requestIp = require("request-ip");
 const TestVisitSchema = require("./test.models");
 const TestButtonClick = require("./test.buttton");
 const FormData = require("./FormData");
+const Submission = mongoose.model("Submission", SubmissionSchema);
 
 const app = express();
 
@@ -935,5 +936,36 @@ app.get('/get-number', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     res.status(500).send(error.message);
+  }
+});
+
+
+
+app.post("/submit", async (req, res) => {
+  try {
+      const { studentName, answers, correctCount, totalQuestions } = req.body;
+
+      const submission = new Submission({
+          studentName,
+          answers,
+          correctCount,
+          totalQuestions,
+      });
+
+      await submission.save();
+
+      res.json({ message: "Quiz submitted successfully", studentName, correctCount });
+  } catch (error) {
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Get All Submissions
+app.get("/submissions", async (req, res) => {
+  try {
+      const submissions = await Submission.find();
+      res.json(submissions);
+  } catch (error) {
+      res.status(500).json({ error: "Server error" });
   }
 });
