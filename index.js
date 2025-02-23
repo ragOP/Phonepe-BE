@@ -18,8 +18,8 @@ const TestVisitSchema = require("./test.models");
 const TestButtonClick = require("./test.buttton");
 const FormData = require("./FormData");
 // const Submission = mongoose.model("Submission", SubmissionSchema);
-const Submission = require("./SubmissionSchema");
-
+const Submission = require("./SubmissionSchema"); 
+const Question = require("./QuestionSchema");
 const app = express();
 
 const MERCHANT_ID = "MINDIONLINE";
@@ -966,6 +966,32 @@ app.get("/submissions", async (req, res) => {
   try {
       const submissions = await Submission.find();
       res.json(submissions);
+  } catch (error) {
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/add-question", async (req, res) => {
+  try {
+      const { question, options, correct } = req.body;
+      if (!question || !options || options.length < 2 || !correct) {
+          return res.status(400).json({ error: "Invalid question data" });
+      }
+
+      const newQuestion = new Question({ question, options, correct });
+      await newQuestion.save();
+
+      res.json({ message: "Question added successfully" });
+  } catch (error) {
+      res.status(500).json({ error: "Server error" });
+  }
+});
+
+// API to Get All Questions
+app.get("/questions", async (req, res) => {
+  try {
+      const questions = await Question.find();
+      res.json(questions);
   } catch (error) {
       res.status(500).json({ error: "Server error" });
   }
