@@ -983,7 +983,8 @@ app.post("/add-question", async (req, res) => {
 
       res.json({ message: "Question added successfully" });
   } catch (error) {
-      res.status(500).json({ error: "Server error" });
+      console.error("Error adding question:", error); // Log error details
+      res.status(500).json({ error: "Server error", details: error.message });
   }
 });
 
