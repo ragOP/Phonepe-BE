@@ -20,6 +20,7 @@ const FormData = require("./FormData");
 // const Submission = mongoose.model("Submission", SubmissionSchema);
 const Submission = require("./SubmissionSchema"); 
 const Question = require("./QuestionSchema");
+const admin = require('firebase-admin');
 const app = express();
 
 const MERCHANT_ID = "MINDIONLINE";
@@ -45,6 +46,12 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 app.get("/", (req, res) => {
   res.send("PhonePe Integration APIs!");
+});
+
+const serviceAccount = require("./serviceAccountkey");
+const fcmTokenModel = require("./token.models");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
 });
 
 // const fetch = require('node-fetch');  // Import fetch for making requests
@@ -995,5 +1002,52 @@ app.get("/questions", async (req, res) => {
       res.json(questions);
   } catch (error) {
       res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post('/api/send-push-notification', async(req, res) => {
+  const {title, description} = req.body;
+  try {
+    const tokenDocs = await fcmTokenModel.find({}, "token");
+    const deviceTokens = tokenDocs.map(doc => doc.token);
+
+    
+    const message = {
+      tokens: deviceTokens,
+      notification: {
+        title: title,
+        body: description
+      },
+    };
+  
+    const response = await admin.messaging().sendEachForMulticast(message);
+    response.responses.forEach((res, index) => {
+      if (!res.success) {
+        console.error(`Failure sending to ${deviceTokens[index]}: ${res.error.message}`);
+      }
+    });
+  
+    console.log("Push notifications sent successfully!");
+    return res.status(200).json({ message: "Push notifications sent successfully!" });
+  } catch (error) {
+    console.error("Error sending notification:", error.message);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+app.post('/api/token', async(req, res) => {
+  const {token} = req.body;
+  try {
+    const fcmToken = await fcmTokenModel.findOne({token});
+    if(fcmToken){
+      return res.status(200).json({ success: "Token already registered" });
+    }
+    const response = await fcmTokenModel.create({
+      token
+    })
+    res.status(200).json({ success: "Token added successfully" });
+  } catch (error) {
+    console.error("Error in storing token:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
